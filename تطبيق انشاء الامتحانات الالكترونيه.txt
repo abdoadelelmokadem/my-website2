@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إنشاء امتحان إلكتروني</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Cairo', sans-serif;
+            background: #f4f4f9;
+            margin: 0;
+            padding: 0;
+            direction: rtl;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 800px;
+            margin: 30px auto;
+            background: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+        }
+
+        .designer-info {
+            text-align: center;
+            font-size: 14px;
+            margin-bottom: 20px;
+            color: #555;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            font-size: 18px;
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+            background: #f9f9f9;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus,
+        .form-group select:focus {
+            border-color: #007bff;
+            background: #fff;
+            outline: none;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 12px 25px;
+            background: #007bff;
+            color: white;
+            text-align: center;
+            font-size: 16px;
+            border-radius: 50px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 6px 15px rgba(0, 123, 255, 0.2);
+        }
+
+        .btn:hover {
+            background: #0056b3;
+            box-shadow: 0 6px 20px rgba(0, 123, 255, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .btn:active {
+            transform: translateY(2px);
+        }
+
+        #exam-container {
+            display: none;
+        }
+
+        .question {
+            margin-bottom: 20px;
+        }
+
+        .question label {
+            font-weight: bold;
+            margin-bottom: 5px;
+            display: block;
+        }
+
+        #options-container {
+            display: none;
+        }
+
+        #correct-answer-container {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container" id="creation-container">
+        <div class="designer-info">
+            <p>تصميم الطالب/ عبد الرحمن عادل المقدم</p>
+        </div>
+
+        <h1>إنشاء امتحان إلكتروني</h1>
+
+        <form id="question-form">
+            <div class="form-group">
+                <label for="question-text">السؤال</label>
+                <textarea id="question-text" rows="3" placeholder="اكتب السؤال هنا..." required></textarea>
+            </div>
+
+            <div class="form-group">
+                <label for="question-type">نوع السؤال</label>
+                <select id="question-type" required>
+                    <option value="">اختر نوع السؤال</option>
+                    <option value="multiple">اختياري</option>
+                    <option value="truefalse">صح أو خطأ</option>
+                    <option value="essay">مقالي</option>
+                </select>
+            </div>
+
+            <div class="form-group" id="options-container">
+                <label>الإجابات</label>
+                <input type="text" placeholder="الإجابة الأولى" class="option">
+                <input type="text" placeholder="الإجابة الثانية" class="option">
+                <input type="text" placeholder="الإجابة الثالثة" class="option">
+                <input type="text" placeholder="الإجابة الرابعة" class="option">
+            </div>
+
+            <div class="form-group" id="correct-answer-container">
+                <label for="correct-answer">الإجابة الصحيحة</label>
+                <input type="text" id="correct-answer" placeholder="أدخل الإجابة الصحيحة" required>
+            </div>
+
+            <div class="form-group">
+                <label for="question-grade">الدرجة</label>
+                <input type="number" id="question-grade" placeholder="أدخل الدرجة" required>
+            </div>
+
+            <button type="button" class="btn" id="add-question">إضافة السؤال</button>
+        </form>
+
+        <button type="button" class="btn" id="generate-link">إنشاء رابط الامتحان</button>
+    </div>
+
+    <div class="container" id="exam-container">
+        <h1>الامتحان</h1>
+        <div id="exam-questions"></div>
+        <button type="button" class="btn" id="submit-exam">إنهاء الامتحان</button>
+    </div>
+<script>
+    const questions = [];
+    const questionType = document.getElementById('question-type');
+    const optionsContainer = document.getElementById('options-container');
+    const correctAnswerContainer = document.getElementById('correct-answer-container');
+    const examQuestionsDiv = document.getElementById('exam-questions');
+    const creationContainer = document.getElementById('creation-container');
+    const examContainer = document.getElementById('exam-container');
+
+    // تغيير واجهة السؤال حسب النوع
+    questionType.addEventListener('change', () => {
+        const type = questionType.value;
+        if (type === 'multiple') {
+            optionsContainer.style.display = 'block';
+            correctAnswerContainer.style.display = 'block';
+        } else if (type === 'truefalse') {
+            optionsContainer.style.display = 'none';
+            correctAnswerContainer.style.display = 'block';
+            document.getElementById('correct-answer').value = "صح";
+        } else if (type === 'essay') {
+            optionsContainer.style.display = 'none';
+            correctAnswerContainer.style.display = 'none';
+        } else {
+            optionsContainer.style.display = 'none';
+            correctAnswerContainer.style.display = 'none';
+        }
+    });
+
+    // إضافة السؤال إلى القائمة
+    document.getElementById('add-question').addEventListener('click', () => {
+        const questionText = document.getElementById('question-text').value;
+        const grade = parseInt(document.getElementById('question-grade').value);
+        const type = questionType.value;
+        const correctAnswer = document.getElementById('correct-answer').value;
+
+        if (!questionText || isNaN(grade) || !type) {
+            alert('يرجى إدخال جميع الحقول المطلوبة.');
+            return;
+        }
+
+        let question = { text: questionText, grade, type };
+
+        if (type === 'multiple') {
+            const options = Array.from(document.querySelectorAll('.option')).map(input => input.value).filter(v => v);
+            if (options.length < 2) {
+                alert('يجب إدخال على الأقل خيارين للإجابات.');
+                return;
+            }
+            question.options = options;
+            question.correctAnswer = correctAnswer;
+        } else if (type === 'truefalse') {
+            question.options = ["صح", "خطأ"];
+            question.correctAnswer = correctAnswer;
+        } else if (type === 'essay') {
+            question.correctAnswer = "";
+        }
+
+        questions.push(question);
+        alert('تمت إضافة السؤال!');
+        document.getElementById('question-form').reset();
+        questionType.dispatchEvent(new Event('change'));
+    });
+
+    // إنشاء الامتحان وعرض الأسئلة
+    document.getElementById('generate-link').addEventListener('click', () => {
+        if (questions.length === 0) {
+            alert('يرجى إضافة أسئلة أولاً.');
+            return;
+        }
+
+        creationContainer.style.display = 'none';
+        examContainer.style.display = 'block';
+        examQuestionsDiv.innerHTML = ''; // مسح الأسئلة السابقة
+
+        questions.forEach((q, index) => {
+            const questionDiv = document.createElement('div');
+            questionDiv.classList.add('question');
+            questionDiv.innerHTML = `<label>${index + 1}. ${q.text} (${q.grade} درجات)</label>`;
+
+            if (q.type === 'multiple' || q.type === 'truefalse') {
+                q.options.forEach((option, i) => {
+                    questionDiv.innerHTML += `
+                        <div>
+                            <input type="radio" name="q${index}" id="q${index}o${i}" value="${option}">
+                            <label for="q${index}o${i}">${option}</label>
+                        </div>`;
+                });
+            } else if (q.type === 'essay') {
+                questionDiv.innerHTML += `
+                    <textarea rows="4" placeholder="أدخل إجابتك هنا..."></textarea>`;
+            }
+
+            examQuestionsDiv.appendChild(questionDiv);
+        });
+    });
+
+    // إنهاء الامتحان وحساب الدرجة
+    document.getElementById('submit-exam').addEventListener('click', () => {
+        let totalScore = 0;
+
+        questions.forEach((q, index) => {
+            if (q.type === 'multiple' || q.type === 'truefalse') {
+                const selectedOption = document.querySelector(`input[name="q${index}"]:checked`);
+                if (selectedOption && selectedOption.value === q.correctAnswer) {
+                    totalScore += q.grade;
+                }
+            }
+        });
+
+        alert(`تم إنهاء الامتحان! مجموع درجاتك: ${totalScore}`);
+        examContainer.style.display = 'none';
+        creationContainer.style.display = 'block';
+        questions.length = 0; // مسح الأسئلة
+        examQuestionsDiv.innerHTML = ''; // إعادة ضبط
+    });
+</script>
+
+</body>
+</html>
